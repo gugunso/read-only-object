@@ -24,4 +24,5 @@ after_script:
   - 'pwd'
   - 'find ./ -name clover.xml'
   - 'ls -l'
+  - 'ls -la build/logs/'
   - 'if [ $(phpenv version-name) = "7.4" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then ./cc-test-reporter after-build -t clover --exit-code $TRAVIS_TEST_RESULT; fi'
