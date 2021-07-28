@@ -19,7 +19,7 @@ before_script:
 
 install: composer install
 
-script: vendor/bin/phpunit
+script: vendor/bin/phpunit --coverage --coverage-xml
 
 after_script:
-  - if [ $(phpenv version-name) = "7.4" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT; fi
+  - if [ $(phpenv version-name) = "7.4" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then ./cc-test-reporter after-build --coverage-input-type clover --exit-code $TRAVIS_TEST_RESULT; fi
