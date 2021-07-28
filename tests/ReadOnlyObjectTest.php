@@ -91,6 +91,7 @@ class ReadOnlyObjectTest extends TestCase
     /**
      * @covers ::toArray
      * @covers ::getVars
+     * @covers ::getAllowedKeys
      */
     public function test_toArray()
     {

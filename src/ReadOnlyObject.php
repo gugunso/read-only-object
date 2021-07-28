@@ -45,16 +45,22 @@ abstract class ReadOnlyObject implements ArrayAccess
      */
     private function getVars(): Traversable
     {
-        $allowedKeys = array_keys(get_class_vars(static::class));
-        foreach (get_object_vars($this) as $name => $value) {
-            if (!in_array($name, $allowedKeys)) {
-                continue;
-            }
-            if ('readOnlyObjectTmpArray' === $name) {
-                continue;
-            }
-            yield $name => $value;
+        $objectVars = get_object_vars($this);
+        foreach ($this->getAllowedKeys() as $name) {
+            yield $name => $objectVars[$name];
         }
+    }
+
+    /**
+     * @return array
+     */
+    private function getAllowedKeys()
+    {
+        $allowedKeys = array_keys(get_class_vars(static::class));
+        if ($index = array_search('readOnlyObjectTmpArray', $allowedKeys)) {
+            unset($allowedKeys[$index]);
+        }
+        return $allowedKeys;
     }
 
     /**
