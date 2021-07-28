@@ -90,6 +90,7 @@ class ReadOnlyObjectTest extends TestCase
 
     /**
      * @covers ::toArray
+     * @covers ::getVars
      */
     public function test_toArray()
     {
@@ -121,5 +122,27 @@ class ReadOnlyObjectTest extends TestCase
         $targetClass = $this->createObject('Yoshiki', 55, 'weAreX');
         $this->expectException(LogicException::class);
         $targetClass->offsetUnset('anyOffset');
+    }
+
+    /**
+     * @covers ::castValue
+     */
+    public function test_castValue()
+    {
+        $mock = \Mockery::mock($this->testClassName)->shouldAllowMockingProtectedMethods()->makePartial();
+
+        $object = new class() extends stdClass {
+            public function __toString(): string
+            {
+                return 'object-value-string';
+            }
+        };
+        $actual = $mock->castValue($object);
+        $this->assertSame('object-value-string', $actual);
+
+        $actual = $mock->castValue(2357);
+        $this->assertSame(2357, $actual);
+        $actual = $mock->castValue(true);
+        $this->assertSame(true, $actual);
     }
 }
