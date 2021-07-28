@@ -23,7 +23,7 @@ script: 'phpunit --coverage-text --coverage-clover ./build/logs/clover.xml'
 after_script:
   - 'pwd'
   - 'find ./ -name clover.xml'
-  - 'find / -name clover.xml'
+  - 'sudo find / -name clover.xml'
   - 'ls -l'
   - 'ls -la build/logs/'
   - 'ls -la /home/travis/build/gugunso/'
