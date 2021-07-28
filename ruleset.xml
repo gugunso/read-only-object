@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ruleset name="php-pj">
+    <description>ruleset based on PSR12</description>
+    <exclude-pattern>vendor/*</exclude-pattern>
+    <rule ref="PSR12">
+    </rule>
+    <config name="installed_paths" value="../../slevomat/coding-standard"/><!-- relative path from PHPCS source location -->
+</ruleset>
