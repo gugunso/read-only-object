@@ -14,7 +14,7 @@ before_script:
 
 install: composer install
 
-script: 'vendor/bin/phpunit --coverage-clover clover.xml'
+script: 'XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-clover clover.xml'
 
 after_script:
   - 'if [ $(phpenv version-name) = "7.3" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then ./cc-test-reporter after-build -t clover --exit-code $TRAVIS_TEST_RESULT; fi'
