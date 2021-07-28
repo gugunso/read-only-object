@@ -62,7 +62,7 @@ class ReadOnlyObjectTest extends TestCase
                 };
                 $this->password = $password;
                 //配列に変換されない
-                $this->toshi='toshi';
+                $this->toshi = 'toshi';
             }
         };
     }
@@ -81,8 +81,10 @@ class ReadOnlyObjectTest extends TestCase
 
         try {
             $targetClass->offsetGet('password');
+            $this->assertTrue(false, 'Exception must be occurred.');
         } catch (\Throwable $e) {
-            $this->assertSame('Undefined index: password', $e->getMessage());
+            //例外が発生すれば良い、例外の型、メッセージは問わない。
+            $this->assertTrue(true);
         }
     }
 
@@ -99,8 +101,6 @@ class ReadOnlyObjectTest extends TestCase
         $actual = $targetClass->toArray();
         $this->assertSame(['name' => 'Yoshiki', 'age' => 55, 'object' => 'object-value'], $actual);
         $this->assertSame(3, count($actual));
-
-        
     }
 
     /**
