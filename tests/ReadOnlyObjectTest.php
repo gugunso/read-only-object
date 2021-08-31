@@ -1,15 +1,13 @@
 <?php
 
-namespace Gugunso\ReadOnlyObject\Tests;
+namespace Gugunso\ReadOnlyObject;
 
-use Gugunso\ReadOnlyObject\ReadOnlyObject;
-use LogicException;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 
 /**
  * @coversDefaultClass \Gugunso\ReadOnlyObject\ReadOnlyObject
- * Gugunso\ReadOnlyObject\Tests\ReadOnlyObjectTest
+ * Gugunso\ReadOnlyObject\ReadOnlyObjectTest
  */
 class ReadOnlyObjectTest extends TestCase
 {
@@ -17,29 +15,27 @@ class ReadOnlyObjectTest extends TestCase
     protected $testClassName = ReadOnlyObject::class;
 
     /**
-     * @covers ::offsetExists
+     * @covers ::__construct()
+     * @covers ::publicPropertyNames()
      */
-    public function test_offsetExists()
+    public function test___construct_正常()
     {
-        $targetClass = $this->createObject('Yoshiki', 55, 'weAreX');
-
-        //テスト対象メソッドの実行 / assertions
-        //public property
-        $this->assertTrue($targetClass->offsetExists('name'));
-        //protected property
-        $this->assertTrue($targetClass->offsetExists('age'));
-        //protected property
-        $this->assertTrue($targetClass->offsetExists('object'));
-        //private property
-        $this->assertFalse($targetClass->offsetExists('password'));
-        //property doesnt exists
-        $this->assertFalse($targetClass->offsetExists('address'));
+        $this->createObject('なまえ', 55, 'my-pass');
+        //例外が発生しないことを検査している　
+        $this->assertTrue(true);
     }
 
+    /**
+     * テスト対象のインスタンスを作成する。
+     * @param string $name
+     * @param int $age
+     * @param string $password
+     * @return ReadOnlyObject
+     */
     public function createObject(string $name, int $age, string $password)
     {
         return new class($name, $age, $password) extends ReadOnlyObject {
-            public $name;
+            protected $name;
             protected $age;
             protected $object;
             private $password;
@@ -61,89 +57,95 @@ class ReadOnlyObjectTest extends TestCase
                     }
                 };
                 $this->password = $password;
-                //配列に変換されない
-                $this->toshi = 'toshi';
+                parent::__construct();
             }
         };
     }
 
     /**
-     * @covers ::offsetGet
+     * @covers ::__construct()
+     * @covers ::publicPropertyNames()
      */
-    public function test_offsetGet()
+    public function test___construct_RaiseException()
     {
-        $targetClass = $this->createObject('Yoshiki', 55, 'weAreX');
+        $this->expectException(\LogicException::class);
+        $this->createInvalidSubClass();
+    }
 
-        //テスト対象メソッドの実行 / assertions
-        $this->assertSame('Yoshiki', $targetClass->offsetGet('name'));
-        $this->assertSame(55, $targetClass->offsetGet('age'));
-        $this->assertSame('object-value', $targetClass->offsetGet('object'));
+    public function createInvalidSubClass()
+    {
+        //public property を持つが存在しているサブクラスを定義
+        return new class() extends ReadOnlyObject {
+            public $name;
 
-        try {
-            $targetClass->offsetGet('password');
-            $this->assertTrue(false, 'Exception must be occurred.');
-        } catch (\Throwable $e) {
-            //例外が発生すれば良い、例外の型、メッセージは問わない。
-            $this->assertTrue(true);
-        }
+            public function __construct()
+            {
+                //コンストラクタ呼び出し
+                parent::__construct();
+            }
+        };
+    }
+
+
+    /**
+     * @covers ::__set
+     */
+    public function test___set_RaiseException()
+    {
+        $this->expectException(\LogicException::class);
+        $targetClass = $this->createObject('なまえ', 55, 'my-pass');
+        $targetClass->name = 'this operation raise exception.';
     }
 
     /**
+     * @covers ::__get
+     */
+    public function test___get()
+    {
+        $targetClass = $this->createObject('なまえ', 55, 'my-pass');
+        $this->assertSame('なまえ', $targetClass->name);
+        $this->assertSame(55, $targetClass->age);
+        $this->assertSame('object-value', $targetClass->object);
+    }
+
+    /**
+     * @covers ::__get
+     */
+    public function test___get_RaiseError()
+    {
+        $this->expectError();
+        $targetClass = $this->createObject('なまえ', 55, 'my-pass');
+        $targetClass->pass;
+    }
+
+    /**
+     * @covers ::getIterator
      * @covers ::toArray
      * @covers ::getVars
      * @covers ::getAllowedKeys
-     */
-    public function test_toArray()
-    {
-        $targetClass = $this->createObject('Yoshiki', 55, 'weAreX');
-        //1回目
-        $actual = $targetClass->toArray();
-        $this->assertSame(['name' => 'Yoshiki', 'age' => 55, 'object' => 'object-value'], $actual);
-        //2回目
-        $actual = $targetClass->toArray();
-        $this->assertSame(['name' => 'Yoshiki', 'age' => 55, 'object' => 'object-value'], $actual);
-        $this->assertSame(3, count($actual));
-    }
-
-    /**
-     * @covers ::offsetSet
-     */
-    public function test_offsetSet()
-    {
-        $targetClass = $this->createObject('Yoshiki', 55, 'weAreX');
-        $this->expectException(LogicException::class);
-        $targetClass->offsetSet('anyOffset', 'aneValue');
-    }
-
-    /**
-     * @covers ::offsetUnset
-     */
-    public function test_offsetUnset()
-    {
-        $targetClass = $this->createObject('Yoshiki', 55, 'weAreX');
-        $this->expectException(LogicException::class);
-        $targetClass->offsetUnset('anyOffset');
-    }
-
-    /**
      * @covers ::castValue
      */
-    public function test_castValue()
+    public function test_getIterator()
     {
-        $mock = \Mockery::mock($this->testClassName)->shouldAllowMockingProtectedMethods()->makePartial();
+        $targetClass = $this->createObject('なまえ', 55, 'my-pass');
 
-        $object = new class() extends stdClass {
-            public function __toString(): string
-            {
-                return 'object-value-string';
-            }
-        };
-        $actual = $mock->castValue($object);
-        $this->assertSame('object-value-string', $actual);
+        $actual1 = $targetClass->getIterator();
+        $this->assertInstanceOf(\Traversable::class, $actual1);
+        $this->assertSame(['name' => 'なまえ', 'age' => 55, 'object' => 'object-value'], iterator_to_array($actual1));
 
-        $actual = $mock->castValue(2357);
-        $this->assertSame(2357, $actual);
-        $actual = $mock->castValue(true);
-        $this->assertSame(true, $actual);
+
+        \Closure::bind(
+            function () use ($targetClass) {
+                $targetClass->name = 'Changing the value does not affect the result of getIterator().';
+            },
+            $this,
+            $targetClass
+        )->__invoke();
+
+
+        $actual2 = $targetClass->getIterator();
+        $this->assertInstanceOf(\Traversable::class, $actual2);
+        $this->assertSame(['name' => 'なまえ', 'age' => 55, 'object' => 'object-value'], iterator_to_array($actual2));
     }
+
 }

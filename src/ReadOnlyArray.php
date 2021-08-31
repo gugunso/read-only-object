@@ -2,54 +2,36 @@
 
 namespace Gugunso\ReadOnlyObject;
 
+use ArrayAccess;
 use ArrayIterator;
-use Closure;
 use IteratorAggregate;
 use LogicException;
 use Traversable;
 
 /**
- * Class ReadOnlyObject
- * protected なプロパティに対して外部から参照を許容するオブジェクト。
+ * Class ReadOnlyArray
+ * 配列のように扱えるReadOnlyなオブジェクト
+ * publicなプロパティを定義した場合、そのプロパティに対して値がsetできてしまうため注意。
  * @package Gugunso\ReadOnlyObject
  */
-abstract class ReadOnlyObject implements IteratorAggregate
+abstract class ReadOnlyArray implements ArrayAccess, IteratorAggregate
 {
     /** @var array|null */
     private $readOnlyObjectTmpArray;
 
     /**
-     * ReadOnlyObject constructor.
-     * サブクラスでは、必ずサブクラスでの 初期化完了後にparent::__construct() を呼び出すこと
+     * @param mixed $offset
+     * @return bool
      */
-    public function __construct()
+    public function offsetExists($offset)
     {
-        //public property の個数を検査、public propertyはwritableなためインスタンス作成自体を許可しない。
-        if (count($this->publicPropertyNames()) > 0) {
-            throw new LogicException('this class has public property.');
-        }
-        //コンストラクタprivate property
-        $this->readOnlyObjectTmpArray = $this->toArray();
+        return array_key_exists($offset, $this->toArray());
     }
 
     /**
      * @return array
      */
-    private function publicPropertyNames(): array
-    {
-        return Closure::bind(
-            function () {
-                return array_keys(get_class_vars(static::class));
-            },
-            $this,
-            null
-        )->__invoke();
-    }
-
-    /**
-     * @return array
-     */
-    private function toArray(): array
+    public function toArray(): array
     {
         if (!is_null($this->readOnlyObjectTmpArray)) {
             return $this->readOnlyObjectTmpArray;
@@ -89,7 +71,7 @@ abstract class ReadOnlyObject implements IteratorAggregate
      * @param $value
      * @return mixed
      */
-    private function castValue($value)
+    protected function castValue($value)
     {
         if (is_object($value)) {
             return (string)$value;
@@ -98,13 +80,32 @@ abstract class ReadOnlyObject implements IteratorAggregate
     }
 
     /**
-     * @param string|int $name
+     * @param mixed $offset
      * @return mixed
      */
-    final public function __get($name)
+    public function offsetGet($offset)
     {
         $array = $this->toArray();
-        return $array[$name];
+        return $array[$offset];
+    }
+
+    /**
+     * @param mixed $offset
+     * @param mixed $value
+     */
+    public function offsetSet($offset, $value)
+    {
+        throw new LogicException(
+            'You have tried to set a value for ' . $offset . '. ' . static::class . ' is read only.'
+        );
+    }
+
+    /**
+     * @param mixed $offset
+     */
+    public function offsetUnset($offset)
+    {
+        throw new LogicException('You have tried to unset ' . $offset . '. ' . static::class . ' is read only.');
     }
 
     /**
