@@ -7,6 +7,7 @@ use ArrayIterator;
 use IteratorAggregate;
 use LogicException;
 use Traversable;
+use Closure;
 
 /**
  * Class ReadOnlyArray
@@ -20,12 +21,31 @@ abstract class ReadOnlyArray implements ArrayAccess, IteratorAggregate
     private $readOnlyObjectTmpArray;
 
     /**
-     * @param mixed $offset
-     * @return bool
+     * ReadOnlyObject constructor.
+     * サブクラスでは、必ずサブクラスでの 初期化完了後にparent::__construct() を呼び出すこと
      */
-    public function offsetExists($offset)
+    public function __construct()
     {
-        return array_key_exists($offset, $this->toArray());
+        //public property の個数を検査、public propertyはwritableなためインスタンス作成自体を許可しない。
+        if (count($this->publicPropertyNames()) > 0) {
+            throw new LogicException('this class has public property.');
+        }
+        //コンストラクタprivate property
+        $this->readOnlyObjectTmpArray = $this->toArray();
+    }
+
+    /**
+     * @return array
+     */
+    private function publicPropertyNames(): array
+    {
+        return Closure::bind(
+            function () {
+                return array_keys(get_class_vars(static::class));
+            },
+            $this,
+            null
+        )->__invoke();
     }
 
     /**
@@ -81,6 +101,15 @@ abstract class ReadOnlyArray implements ArrayAccess, IteratorAggregate
 
     /**
      * @param mixed $offset
+     * @return bool
+     */
+    public function offsetExists($offset)
+    {
+        return array_key_exists($offset, $this->toArray());
+    }
+
+    /**
+     * @param mixed $offset
      * @return mixed
      */
     public function offsetGet($offset)
@@ -126,4 +155,5 @@ abstract class ReadOnlyArray implements ArrayAccess, IteratorAggregate
     {
         return new ArrayIterator($this->toArray());
     }
+
 }

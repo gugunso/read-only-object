@@ -39,7 +39,7 @@ class ReadOnlyArrayTest extends TestCase
     public function createObject(string $name, int $age, string $password)
     {
         return new class($name, $age, $password) extends ReadOnlyArray {
-            public $name;
+            protected $name;
             protected $age;
             protected $object;
             private $password;
@@ -61,6 +61,8 @@ class ReadOnlyArrayTest extends TestCase
                     }
                 };
                 $this->password = $password;
+
+                parent::__construct();
             }
         };
     }
@@ -151,10 +153,6 @@ class ReadOnlyArrayTest extends TestCase
     public function test___set()
     {
         $targetClass = $this->createObject('Name', 99, 'pass');
-
-        //publicなメンバに対して直接代入することはできてしまう。
-        $targetClass->name = '';
-
         //protectedなメンバに対する直接代入は例外発生
         $this->expectException(LogicException::class);
         $targetClass->age = '';
@@ -171,6 +169,41 @@ class ReadOnlyArrayTest extends TestCase
         $this->assertSame('Name', $asArray['name']);
         $this->assertSame(99, $asArray['age']);
         $this->assertSame('object-value', $asArray['object']);
+    }
+
+    /**
+     * @covers ::__construct()
+     * @covers ::publicPropertyNames()
+     */
+    public function test___construct_正常系()
+    {
+        $this->createObject('Name', 99, 'pass');
+        //例外が発生しないことを検査している　
+        $this->assertTrue(true);
+    }
+
+    /**
+     * @covers ::__construct()
+     * @covers ::publicPropertyNames()
+     */
+    public function test___construct_RaiseException()
+    {
+        $this->expectException(\LogicException::class);
+        $this->createInvalidSubClass();
+    }
+
+    public function createInvalidSubClass()
+    {
+        //public property を持つが存在しているサブクラスを定義
+        return new class() extends ReadOnlyArray {
+            public $name;
+
+            public function __construct()
+            {
+                //コンストラクタ呼び出し
+                parent::__construct();
+            }
+        };
     }
 
 }
