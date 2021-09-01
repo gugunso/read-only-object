@@ -2,10 +2,13 @@
 
 namespace Gugunso\ReadOnlyObject\Tests;
 
+use Gugunso\ReadOnlyObject\BaseObject;
 use Gugunso\ReadOnlyObject\ReadOnlyArray;
 use LogicException;
 use PHPUnit\Framework\TestCase;
 use stdClass;
+use ArrayAccess;
+use IteratorAggregate;
 
 /**
  * @coversDefaultClass \Gugunso\ReadOnlyObject\ReadOnlyArray
@@ -90,8 +93,6 @@ class ReadOnlyArrayTest extends TestCase
 
     /**
      * @covers ::toArray
-     * @covers ::getVars
-     * @covers ::getAllowedKeys
      */
     public function test_toArray()
     {
@@ -126,84 +127,12 @@ class ReadOnlyArrayTest extends TestCase
     }
 
     /**
-     * @covers ::castValue
+     * @coversNothing
      */
-    public function test_castValue()
-    {
-        $mock = \Mockery::mock($this->testClassName)->shouldAllowMockingProtectedMethods()->makePartial();
-
-        $object = new class() extends stdClass {
-            public function __toString(): string
-            {
-                return 'object-value-string';
-            }
-        };
-        $actual = $mock->castValue($object);
-        $this->assertSame('object-value-string', $actual);
-
-        $actual = $mock->castValue(2357);
-        $this->assertSame(2357, $actual);
-        $actual = $mock->castValue(true);
-        $this->assertSame(true, $actual);
+    public function test___construct(){
+        $targetClass = $this->createObject('Yoshiki', 55, 'weAreX');
+        $this->assertInstanceOf(BaseObject::class,$targetClass);
+        $this->assertInstanceOf(IteratorAggregate::class,$targetClass);
+        $this->assertInstanceOf(ArrayAccess::class,$targetClass);
     }
-
-    /**
-     * @covers ::__set
-     */
-    public function test___set()
-    {
-        $targetClass = $this->createObject('Name', 99, 'pass');
-        //protectedなメンバに対する直接代入は例外発生
-        $this->expectException(LogicException::class);
-        $targetClass->age = '';
-    }
-
-    /**
-     * @covers ::getIterator
-     */
-    public function test_getIterator()
-    {
-        $targetClass = $this->createObject('Name', 99, 'pass');
-
-        $asArray = iterator_to_array($targetClass->getIterator());
-        $this->assertSame('Name', $asArray['name']);
-        $this->assertSame(99, $asArray['age']);
-        $this->assertSame('object-value', $asArray['object']);
-    }
-
-    /**
-     * @covers ::__construct()
-     * @covers ::publicPropertyNames()
-     */
-    public function test___construct_正常系()
-    {
-        $this->createObject('Name', 99, 'pass');
-        //例外が発生しないことを検査している　
-        $this->assertTrue(true);
-    }
-
-    /**
-     * @covers ::__construct()
-     * @covers ::publicPropertyNames()
-     */
-    public function test___construct_RaiseException()
-    {
-        $this->expectException(\LogicException::class);
-        $this->createInvalidSubClass();
-    }
-
-    public function createInvalidSubClass()
-    {
-        //public property を持つが存在しているサブクラスを定義
-        return new class() extends ReadOnlyArray {
-            public $name;
-
-            public function __construct()
-            {
-                //コンストラクタ呼び出し
-                parent::__construct();
-            }
-        };
-    }
-
 }

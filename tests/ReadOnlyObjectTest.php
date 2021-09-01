@@ -4,6 +4,7 @@ namespace Gugunso\ReadOnlyObject;
 
 use PHPUnit\Framework\TestCase;
 use stdClass;
+use IteratorAggregate;
 
 /**
  * @coversDefaultClass \Gugunso\ReadOnlyObject\ReadOnlyObject
@@ -15,14 +16,13 @@ class ReadOnlyObjectTest extends TestCase
     protected $testClassName = ReadOnlyObject::class;
 
     /**
-     * @covers ::__construct()
-     * @covers ::publicPropertyNames()
+     * @coversNothing
      */
-    public function test___construct_正常()
+    public function test___construct()
     {
-        $this->createObject('なまえ', 55, 'my-pass');
-        //例外が発生しないことを検査している　
-        $this->assertTrue(true);
+        $targetClass = $this->createObject('なまえ', 55, 'my-pass');
+        $this->assertInstanceOf(BaseObject::class, $targetClass);
+        $this->assertInstanceOf(IteratorAggregate::class, $targetClass);
     }
 
     /**
@@ -63,29 +63,25 @@ class ReadOnlyObjectTest extends TestCase
     }
 
     /**
-     * @covers ::__construct()
-     * @covers ::publicPropertyNames()
+     * @covers ::toArray
      */
-    public function test___construct_RaiseException()
+    public function test_toArray()
     {
-        $this->expectException(\LogicException::class);
-        $this->createInvalidSubClass();
+        $targetClass = $this->createObject('なまえ', 55, 'my-pass');
+
+        $actual = \Closure::bind(
+            /** @var mixed $targetClass */
+            function () use ($targetClass) {
+                //assertions
+                return $targetClass->toArray();
+            },
+            $this,
+            $targetClass
+        )->__invoke();
+
+        $this->assertSame(['name'=>'なまえ','age'=>55,'object'=>'object-value'], $actual);
+
     }
-
-    public function createInvalidSubClass()
-    {
-        //public property を持つが存在しているサブクラスを定義
-        return new class() extends ReadOnlyObject {
-            public $name;
-
-            public function __construct()
-            {
-                //コンストラクタ呼び出し
-                parent::__construct();
-            }
-        };
-    }
-
 
     /**
      * @covers ::__set
@@ -95,57 +91,6 @@ class ReadOnlyObjectTest extends TestCase
         $this->expectException(\LogicException::class);
         $targetClass = $this->createObject('なまえ', 55, 'my-pass');
         $targetClass->name = 'this operation raise exception.';
-    }
-
-    /**
-     * @covers ::__get
-     */
-    public function test___get()
-    {
-        $targetClass = $this->createObject('なまえ', 55, 'my-pass');
-        $this->assertSame('なまえ', $targetClass->name);
-        $this->assertSame(55, $targetClass->age);
-        $this->assertSame('object-value', $targetClass->object);
-    }
-
-    /**
-     * @covers ::__get
-     */
-    public function test___get_RaiseError()
-    {
-        $this->expectError();
-        $targetClass = $this->createObject('なまえ', 55, 'my-pass');
-        $targetClass->pass;
-    }
-
-    /**
-     * @covers ::getIterator
-     * @covers ::toArray
-     * @covers ::getVars
-     * @covers ::getAllowedKeys
-     * @covers ::castValue
-     */
-    public function test_getIterator()
-    {
-        $targetClass = $this->createObject('なまえ', 55, 'my-pass');
-
-        $actual1 = $targetClass->getIterator();
-        $this->assertInstanceOf(\Traversable::class, $actual1);
-        $this->assertSame(['name' => 'なまえ', 'age' => 55, 'object' => 'object-value'], iterator_to_array($actual1));
-
-
-        \Closure::bind(
-            function () use ($targetClass) {
-                $targetClass->name = 'Changing the value does not affect the result of getIterator().';
-            },
-            $this,
-            $targetClass
-        )->__invoke();
-
-
-        $actual2 = $targetClass->getIterator();
-        $this->assertInstanceOf(\Traversable::class, $actual2);
-        $this->assertSame(['name' => 'なまえ', 'age' => 55, 'object' => 'object-value'], iterator_to_array($actual2));
     }
 
 }
