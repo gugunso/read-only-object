@@ -1,6 +1,5 @@
 <?php
 
-
 namespace Gugunso\ReadOnlyObject;
 
 use ArrayIterator;
@@ -8,7 +7,6 @@ use Closure;
 use IteratorAggregate;
 use LogicException;
 use Traversable;
-
 
 class BaseObject implements IteratorAggregate
 {
@@ -39,7 +37,8 @@ class BaseObject implements IteratorAggregate
                 return array_keys(get_class_vars(static::class));
             },
             $this,
-            null
+            new class (){
+            }  //外側からコールされている状態をエミュレートするために無名クラスをnewしている。nullではダメなのか？？
         )->__invoke();
     }
 
@@ -83,12 +82,15 @@ class BaseObject implements IteratorAggregate
     }
 
     /**
-     * @param $value
+     * @param mixed $value
      * @return mixed
      */
     protected function castValue($value)
     {
         if (is_object($value)) {
+            if (!method_exists($value, '__toString')) {
+                throw new LogicException(get_class($value) . ' must implement __toString(). ');
+            }
             return (string)$value;
         }
         return $value;

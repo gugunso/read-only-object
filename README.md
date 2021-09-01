@@ -8,6 +8,15 @@
 
 A read-only abstract class used when developing in PHP
 
+## 想定している用途
+
+後日リファクタリングすることを前提に、
+
+- DTO（DataTransferObject）的な用途のクラスをサクッと作りたい場合
+- ある一連の形式の複雑なデータ構造を格納したいが、nativeな配列を利用するとコードが汚くなってしまう場合
+
+に利用することを想定しています。
+
 ## このパッケージが提供する機能
 
 Read Only風に振る舞うオブジェクトの抽象クラスです。以下のルールに従って利用してください。
@@ -69,7 +78,7 @@ echo $object->password; // private property に対するアクセスも「Undefi
 $object->id=2; //値の代入を行うと、LogicExceptionが発生
 ```
 
-※id,nameは定義上protectedですが、マジックメソッド __get() を経由することでReadAccessが可能です。
+※id,nameは定義上protectedですが、マジックメソッド __get() を経由することでReadAccessを可能にしています。
 
 ※値の代入を試みた場合、LogicExceptionが発生します。
 
@@ -86,7 +95,24 @@ foreach($object as $propertyName => $propertyValue){
 
 
 
+## 備考
+
+### ReadOnlyArray について
+
+このパッケージには、ReadOnlyArray クラスも同梱されていますが、可能な場合はReadOnlyObjectの方を利用することを推奨します。
+
+ReadOnlyObjectとReadOnlyArrayの違いは以下の通りです。
+
+- ReadOnlyArrayは、ArrayAccessインターフェースを実装している。
+- toArray() メソッドのアクセシビリティがpublic
 
 
 
+上記の違いにより、外部から $object['name'] のような形式でのアクセスが可能となりますが、コード上のどこでpropertyが参照されているのかがわかりにくくなる点に注意してください。（$object->name の方が追跡しやすい。）
+
+
+
+### 開発効率と保守性
+
+ReadOnlyObject、ReadOnlyArrayのいずれを利用する場合でも、専用のpublicなgetterを用意しない限り、「クラス定義（プロパティ名）の変更が、クラスの外部に直接影響を与えてしまう」という点については注意が必要です。ReadOnlyObject/ReadOnlyArray は開発上便利なオブジェクトですが、適切なタイミングで外部からのアクセスに対応するpublicなgetterを整備するリファクタリングを行い、カプセル化するよう配慮してください。（後日リファクタリングを行う際に、ReadOnlyArrayよりも、ReadOnlyObjectの方が修正が容易だと思います）
 

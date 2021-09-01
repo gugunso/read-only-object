@@ -6,6 +6,7 @@ use Gugunso\ReadOnlyObject\BaseObject;
 use Gugunso\ReadOnlyObject\ReadOnlyObject;
 use PHPUnit\Framework\TestCase;
 use stdClass;
+use LogicException;
 
 /**
  * @coversDefaultClass \Gugunso\ReadOnlyObject\BaseObject
@@ -148,4 +149,25 @@ class BaseObjectTest extends TestCase
         $this->assertSame('object-value', $targetClass->object);
     }
 
+    /**
+     * @covers ::castValue
+     */
+    public function test_castValue_例外(){
+        $this->expectException(LogicException::class);
+        $this->createWithNoToStringObject();
+    }
+
+
+    public function createWithNoToStringObject()
+    {
+        return new class() extends BaseObject {
+            protected $objectRaiseExceptionInCastValue;
+
+            public function __construct()
+            {
+                $this->objectRaiseExceptionInCastValue = new class() extends stdClass {};
+                parent::__construct();
+            }
+        };
+    }
 }
